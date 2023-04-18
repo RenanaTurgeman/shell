@@ -14,9 +14,6 @@ int main()
 	char command[1024];
 	char *token;
 	// flags:
-	int flag_out = 0;  // >
-	int flag_in = 0;   // <
-	int flag_a = 0;	   // appaned >>
 	int flag_pipe = 0; // |
 
 	while (1)
@@ -56,13 +53,15 @@ int main()
 			{
 				if (strcmp(argv[j], ">>")==0)
 				{
-					flag_a = 1;
 					argv[j] = NULL;
+					char* text= argv[j+1];
+					int outA = open(text, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+					dup2(outA, STDOUT_FILENO);
+					close(outA);
 					break;
 				}
-				if (strcmp(argv[j], ">")==0)
+				else if (strcmp(argv[j], ">")==0) //out
 				{
-					flag_out = 1;
 					argv[j] = NULL;
 					char* text= argv[j+1];
 					int out = open(text, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -70,14 +69,18 @@ int main()
 					close(out);
 					break;
 				}
-				if (strcmp(argv[j], "<")==0)
+				else if (strcmp(argv[j], "<")==0) //in
 				{
-					flag_in = 1;
 					argv[j] = NULL;
+					char* text= argv[j+1];
+					int in = open(text, O_RDONLY);
+					dup2(in, STDIN_FILENO);
+					close(in);
 				}
 				if (strcmp(argv[j], "|")==0)
 				{
 					flag_pipe = 1;
+					
 				}
 			}
 
