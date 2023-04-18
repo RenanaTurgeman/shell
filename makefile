@@ -44,4 +44,4 @@ stshell.o: stshell.c
 .PHONY: all clean
 
 clean:
-	$(RM)  *.o *.a *.so *.dll *.dylib cmp copy encode decode stshell
+	$(RM)  *.o *.a *.so *.dll *.h.gch *.dylib cmp copy encode decode stshell
