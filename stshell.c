@@ -7,46 +7,88 @@
 #include "unistd.h"
 #include <string.h>
 
-int main() {
+int main()
+{
 	int i;
 	char *argv[10];
 	char command[1024];
 	char *token;
+	// flags:
+	int flag_out = 0;  // >
+	int flag_in = 0;   // <
+	int flag_a = 0;	   // appaned >>
+	int flag_pipe = 0; // |
 
-	while (1) {
-        printf("stshell> ");
-	    fgets(command, 1024, stdin);
-	    command[strlen(command) - 1] = '\0'; // replace \n with \0
+	while (1)
+	{
+		printf("\033[1;32m"); // Set the text color to green and bold
+		printf("stshell> ");
+		printf("\033[0m"); // Reset the text color to the default
 
-	    /* parse command line */
-	    i = 0;
-	    token = strtok (command," ");
-	    while (token != NULL)
-	    {
-		argv[i] = token;
-		token = strtok (NULL, " ");
-		i++;
-	    }
-	    argv[i] = NULL;
+		fgets(command, 1024, stdin);
+		command[strlen(command) - 1] = '\0'; // replace \n with \0
 
-	    /* Is command empty */ 
-	    if (argv[0] == NULL)
-		continue;
+		/* parse command line */
+		i = 0;
+		token = strtok(command, " ");
+		while (token != NULL)
+		{
+			argv[i] = token;
+			token = strtok(NULL, " ");
+			i++;
+		}
+		argv[i] = NULL;
 
-	    // /* for commands not part of the shell command language */ 
-	    // if (fork() == 0) { 
-		// execvp(argv[0], argv);
-	    // } 
+		/* Is command empty */
+		if (argv[0] == NULL)
+			continue;
+
+		// Check if user wants to exit
+		if (strcmp(command, "exit") == 0)
+		{
+			return 0;
+		}
+
 		pid_t pid = fork();
-		if(pid==0){
-			execvp(argv[0],argv);
+		if (pid == 0) // child
+		{
+			for (int j = 0; argv[j] != NULL; j++)
+			{
+				if (strcmp(argv[j], ">>")==0)
+				{
+					flag_a = 1;
+					argv[j] = NULL;
+					break;
+				}
+				if (strcmp(argv[j], ">")==0)
+				{
+					flag_out = 1;
+					argv[j] = NULL;
+					char* text= argv[j+1];
+					int out = open(text, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+					dup2(out, STDOUT_FILENO);
+					close(out);
+					break;
+				}
+				if (strcmp(argv[j], "<")==0)
+				{
+					flag_in = 1;
+					argv[j] = NULL;
+				}
+				if (strcmp(argv[j], "|")==0)
+				{
+					flag_pipe = 1;
+				}
+			}
 
+				execvp(argv[0], argv);
+
+				fprintf(stderr, "Error: %s\n", strerror(errno));
 		}
 		wait(NULL);
 		// if (getppid())
 		// {
 		// 	/* code */
 		// }
-		
 	}
 }
