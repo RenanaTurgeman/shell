@@ -6,6 +6,7 @@
 #include "stdlib.h"
 #include "unistd.h"
 #include <string.h>
+#include <signal.h>
 
 int main()
 {
@@ -39,6 +40,8 @@ int main()
 		/* Is command empty */
 		if (argv[0] == NULL)
 			continue;
+		// chek if user enter ctrl+c
+		signal(SIGINT, SIG_IGN); // for ignore if get ctrl+c
 
 		// Check if user wants to exit
 		if (strcmp(command, "exit") == 0)
@@ -49,44 +52,46 @@ int main()
 		pid_t pid = fork();
 		if (pid == 0) // child
 		{
+			// for ctrl+c
+			signal(SIGINT, SIG_DFL); // for do a difult ctrl+c
+
 			for (int j = 0; argv[j] != NULL; j++)
 			{
-				if (strcmp(argv[j], ">>")==0)
+				if (strcmp(argv[j], ">>") == 0)
 				{
 					argv[j] = NULL;
-					char* text= argv[j+1];
+					char *text = argv[j + 1];
 					int outA = open(text, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
 					dup2(outA, STDOUT_FILENO);
 					close(outA);
 					break;
 				}
-				else if (strcmp(argv[j], ">")==0) //out
+				else if (strcmp(argv[j], ">") == 0) // out
 				{
 					argv[j] = NULL;
-					char* text= argv[j+1];
+					char *text = argv[j + 1];
 					int out = open(text, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 					dup2(out, STDOUT_FILENO);
 					close(out);
 					break;
 				}
-				else if (strcmp(argv[j], "<")==0) //in
+				else if (strcmp(argv[j], "<") == 0) // in
 				{
 					argv[j] = NULL;
-					char* text= argv[j+1];
+					char *text = argv[j + 1];
 					int in = open(text, O_RDONLY);
 					dup2(in, STDIN_FILENO);
 					close(in);
 				}
-				if (strcmp(argv[j], "|")==0)
+				if (strcmp(argv[j], "|") == 0)
 				{
 					flag_pipe = 1;
-					
 				}
 			}
 
-				execvp(argv[0], argv);
+			execvp(argv[0], argv);
 
-				fprintf(stderr, "Error: %s\n", strerror(errno));
+			fprintf(stderr, "Error: %s\n", strerror(errno));
 		}
 		wait(NULL);
 		// if (getppid())
