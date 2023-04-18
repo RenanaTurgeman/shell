@@ -1,5 +1,7 @@
 // codecB library implementation
 
+char* codecB_encode(char* message) ;
+char* codecB_decode(char* message) ;
 #include <string.h>
 #include <stdlib.h>
 

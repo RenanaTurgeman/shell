@@ -1,34 +1,47 @@
-CC=gcc
-CFLAGS=-Wall -g
-LDFLAGS=-L. -lcodecA -lcodecB
+CC = gcc
+CFLAGS = -Wall -g
+RM = rm -f
+SHAREDLIB = -shared
+DLIBFLAGS = -ldl
 
-all: encode decode
 
-encode: encode.o
-	$(CC) $(CFLAGS) -o $@ encode.o $(LDFLAGS)
+all: cmp copy encode decode stshell
 
-decode: decode.o
-	$(CC) $(CFLAGS) -o $@ decode.o $(LDFLAGS)
+cmp: cmp.o
+	$(CC) $(CFLAGS) -o $@ $^
 
-encode.o: encode.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+copy: copy.o
+	$(CC) $(CFLAGS) -o $@ $^
 
-decode.o: decode.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+encode: encode.o libcodecA.so libcodecB.so
+	$(CC) $(CFLAGS) $(DLIBFLAGS) -o $@ encode.o
+
+decode: decode.o libcodecA.so libcodecB.so
+	$(CC) $(CFLAGS) $(DLIBFLAGS) -o $@ decode.o
+
+stshell: stshell.o
+	$(CC) $(CFLAGS) -o $@ $^
 
 libcodecA.so: codecA.o
-	$(CC) $(CFLAGS) -shared -o $@ $<
-
-codecA.o: codecA.c
-	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+	$(CC) $(CFLAGS) $(SHAREDLIB) -o $@ $^
 
 libcodecB.so: codecB.o
-	$(CC) $(CFLAGS) -shared -o $@ $<
+	$(CC) $(CFLAGS) $(SHAREDLIB) -o $@ $^
 
-codecB.o: codecB.c
-	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+codecA.o: codecA.c codecA.h
+	$(CC) $(CFLAGS) -fPIC -c $^
 
-.PHONY: clean all
+codecB.o: codecB.c codecB.h
+	$(CC) $(CFLAGS) -fPIC -c $^
+
+
+stshell.o: stshell.c 
+	$(CC) $(CFLAGS) -c $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^
+
+.PHONY: all clean
 
 clean:
-	rm -f *.o *.a *.so encode decode 
+	$(RM)  *.o *.a *.so *.dll *.dylib cmp copy encode decode stshell
