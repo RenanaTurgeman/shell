@@ -15,6 +15,7 @@ int main()
 {
 	int i;
 	char *argv[10];
+	// char *argv2[10];
 	char command[1024];
 	char commandCopy[1024];
 	char *token;
@@ -30,7 +31,7 @@ int main()
 		command[strlen(command) - 1] = '\0'; // replace \n with \0
 
 		/*copy the command line*/
-		strcpy(commandCopy , command);
+		strcpy(commandCopy, command);
 		/* parse command line by " "*/
 		i = 0;
 		token = strtok(command, " ");
@@ -43,15 +44,15 @@ int main()
 		argv[i] = NULL;
 
 		/* parse command line by "|"*/
-		i = 0;
-		tokenCopy = strtok(commandCopy, "|");
-		while (tokenCopy != NULL)
-		{
-			argv[i] = token;
-			token = strtok(NULL, " ");
-			i++;
-		}
-		argv[i] = NULL;
+		// i = 0;
+		// tokenCopy = strtok(commandCopy, "|");
+		// while (tokenCopy != NULL)
+		// {
+		// 	argv2[i] = tokenCopy;
+		// 	tokenCopy = strtok(NULL, " ");
+		// 	i++;
+		// }
+		// argv2[i] = NULL;
 
 		/* Is command empty */
 		if (argv[0] == NULL)
@@ -91,33 +92,36 @@ int main()
 					close(out);
 					break;
 				}
-				else if (strcmp(argv[j], "<") == 0) // in
-				{
-					argv[j] = NULL;
-					char *text = argv[j + 1];
-					int in = open(text, O_RDONLY);
-					dup2(in, STDIN_FILENO);
-					close(in);
-				}
 				if (strcmp(argv[j], "|") == 0)
 				{
+					argv[j] = NULL;
 					int p[2];
-					int pip =pipe(p);//0
+					int pip = pipe(p); // 0
+					if (pip != 0)
+					{
+						printf("error in pipe");
+						exit(1);
+					}
 
 					pid_t pid2 = fork();
-					if (pid2>0) //we stiil in the child
+					if (pid2 > 0) // we stiil in the child
 					{
-						dup2(1,p[0]);
-						ececvp();//left side o pipe
+						close(p[1]);
+						dup2(p[0], STDOUT_FILENO);
+						// execvp(argv2[0], argv2); // left side o pipe
+						execvp(argv[j - 1], argv ); // left side o pipe
+						close(p[0]);
+						wait(NULL);
 					}
-					
-					if (pid2==0) //grandson
+
+					if (pid2 == 0) // grandson
 					{
-						dup2(0,p[1]);	
-						ececp(); //rruh side o pipe
-						//all anain for |
+						close(p[0]);
+						dup2(p[1], STDIN_FILENO);
+						execvp(argv[j + 1], argv ); // rruh side o pipe
+												   // all anain for |
+						close(p[1]);
 					}
-					
 				}
 			}
 
