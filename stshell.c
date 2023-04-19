@@ -7,7 +7,9 @@
 #include "unistd.h"
 #include <string.h>
 #include <signal.h>
-
+void handle_signail(int sig){
+	//we do nothing for ignore the signal
+}
 int main()
 {
 	int i;
@@ -41,7 +43,7 @@ int main()
 		if (argv[0] == NULL)
 			continue;
 		// chek if user enter ctrl+c
-		signal(SIGINT, SIG_IGN); // for ignore if get ctrl+c
+		signal(SIGINT , handle_signail); // for ignore if get ctrl+c
 
 		// Check if user wants to exit
 		if (strcmp(command, "exit") == 0)
