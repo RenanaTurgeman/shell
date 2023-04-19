@@ -17,9 +17,9 @@ int main()
 	char *argv[10];
 	// char *argv2[10];
 	char command[1024];
-	char commandCopy[1024];
+	// char commandCopy[1024];
 	char *token;
-	char *tokenCopy;
+	// char *tokenCopy;
 
 	while (1)
 	{
@@ -31,7 +31,7 @@ int main()
 		command[strlen(command) - 1] = '\0'; // replace \n with \0
 
 		/*copy the command line*/
-		strcpy(commandCopy, command);
+		// strcpy(commandCopy, command);
 		/* parse command line by " "*/
 		i = 0;
 		token = strtok(command, " ");
@@ -94,23 +94,39 @@ int main()
 				}
 				if (strcmp(argv[j], "|") == 0)
 				{
+					printf("1");
 					argv[j] = NULL;
+					printf("2");
+
 					int p[2];
 					int pip = pipe(p); // 0
+					printf("3");
+
 					if (pip != 0)
 					{
 						printf("error in pipe");
 						exit(1);
 					}
+					printf("4");
 
 					pid_t pid2 = fork();
 					if (pid2 > 0) // we stiil in the child
 					{
+						printf("5");
+
 						close(p[1]);
+						printf("6");
+
 						dup2(p[0], STDOUT_FILENO);
+						printf("7");
+
 						// execvp(argv2[0], argv2); // left side o pipe
-						execvp(argv[j - 1], argv ); // left side o pipe
+						execvp(argv[j - 1], argv); // left side o pipe
+						printf("8");
+
 						close(p[0]);
+						printf("9");
+
 						wait(NULL);
 					}
 
@@ -118,7 +134,7 @@ int main()
 					{
 						close(p[0]);
 						dup2(p[1], STDIN_FILENO);
-						execvp(argv[j + 1], argv ); // rruh side o pipe
+						execvp(argv[j + 1], argv); // rruh side o pipe
 												   // all anain for |
 						close(p[1]);
 					}
