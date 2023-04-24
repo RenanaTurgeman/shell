@@ -46,7 +46,7 @@ int main()
 		/* Is command empty */
 		if (argv[0] == NULL)
 			continue;
-		
+
 		// Check if user wants to exit
 		if (strcmp(command, "exit") == 0)
 		{
@@ -54,7 +54,8 @@ int main()
 		}
 
 		pid_t pid = fork();
-		if(pid<0){
+		if (pid < 0)
+		{
 			exit(1);
 		}
 		if (pid == 0) // child
@@ -77,6 +78,7 @@ int main()
 				{
 					argv[j] = NULL;
 					char *text = argv[j + 1];
+					// argv[j + 1] = NULL; // ****
 					int out = open(text, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 					dup2(out, STDOUT_FILENO);
 					close(out);
@@ -84,53 +86,82 @@ int main()
 				}
 				if (strcmp(argv[j], "|") == 0)
 				{
-					  int p[2];
-					  if(pipe(p)<0){
+					int p[2];
+					if (pipe(p) < 0)
+					{
 						exit(1);
-					  }
+					}
 
-					  pid_t pid2 = fork();
-					  if(pid2<0){
+					pid_t pid2 = fork();
+					if (pid2 < 0)
+					{
 						exit(1);
-					  }
+					}
 
-					  if(pid2==0){
-						//the left command
+					if (pid2 == 0)
+					{
+						// the left command
 						close(p[0]);
-						int i=0;
+						int i = 0;
 						char *left[10];
-						while(strcmp(argv[i], "|")){
-							left[i]=argv[i];
+						while (strcmp(argv[i], "|"))
+						{
+							left[i] = argv[i];
 							i++;
 						}
-						left[i]=NULL;
-						int dup1 =dup2(p[1],1);
-						if(dup1<0)
+						left[i] = NULL;
+						int dup1 = dup2(p[1], 1);
+						if (dup1 < 0)
 							exit(1);
 						close(p[1]);
 						execvp(left[0], left);
-					  }else{
-						//the right command
+					}
+					else
+					{
+						// the right command
 						close(p[1]);
-						int i=0;
-						for (int k = j+1; argv[k] != NULL; k++){
-							argv[i]=argv[k];
+						int i = 0;
+						for (int k = j + 1; argv[k] != NULL; k++)
+						{
+							if (strcmp(argv[k], ">") == 0)
+							{
+
+								char *text = argv[k + 1];
+								int out = open(text, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+								dup2(out, STDOUT_FILENO);
+								close(out);
+								break;
+
+								// argv[i] = NULL;
+							}
+							else if (strcmp(argv[k], ">>") == 0)
+							{
+								char *text = argv[k + 1];
+								int outA = open(text, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+								dup2(outA, STDOUT_FILENO);
+								close(outA);
+								break;
+							}
+							else
+							{
+								argv[i] = argv[k];
+							}
+
 							i++;
 						}
-						argv[i]=NULL;
-						
-						int dup =dup2(p[0],0);
-						if(dup<0)
+						argv[i] = NULL;
+
+						int dup = dup2(p[0], 0);
+						if (dup < 0)
 							exit(1);
 						close(p[0]);
 						wait(NULL);
-					  }
-
+					}
 				}
-				
-			}//for
-			execvp(argv[0],argv);
-		}//if
+
+			} // for
+			execvp(argv[0], argv);
+		} // if
 		wait(NULL);
-	}//while
+	} // while
 }
