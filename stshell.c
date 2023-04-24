@@ -111,6 +111,7 @@ int main()
 						execvp(left[0], left);
 					  }else{
 						//the right command
+						close(p[1]);
 						int i=0;
 						for (int k = j+1; argv[k] != NULL; k++){
 							argv[i]=argv[k];
