@@ -7,19 +7,21 @@
 #include "unistd.h"
 #include <string.h>
 #include <signal.h>
+
 void handle_signail(int sig)
 {
 	// we do nothing for ignore the signal
 }
+
 int main()
 {
 	int i;
 	char *argv[10];
-	// char *argv2[10];
 	char command[1024];
-	// char commandCopy[1024];
 	char *token;
-	// char *tokenCopy;
+
+	// chek if user enter ctrl+c
+	signal(SIGINT, handle_signail); // for ignore if get ctrl+c
 
 	while (1)
 	{
@@ -30,8 +32,6 @@ int main()
 		fgets(command, 1024, stdin);
 		command[strlen(command) - 1] = '\0'; // replace \n with \0
 
-		/*copy the command line*/
-		// strcpy(commandCopy, command);
 		/* parse command line by " "*/
 		i = 0;
 		token = strtok(command, " ");
@@ -43,23 +43,10 @@ int main()
 		}
 		argv[i] = NULL;
 
-		/* parse command line by "|"*/
-		// i = 0;
-		// tokenCopy = strtok(commandCopy, "|");
-		// while (tokenCopy != NULL)
-		// {
-		// 	argv2[i] = tokenCopy;
-		// 	tokenCopy = strtok(NULL, " ");
-		// 	i++;
-		// }
-		// argv2[i] = NULL;
-
 		/* Is command empty */
 		if (argv[0] == NULL)
 			continue;
-		// chek if user enter ctrl+c
-		signal(SIGINT, handle_signail); // for ignore if get ctrl+c
-
+		
 		// Check if user wants to exit
 		if (strcmp(command, "exit") == 0)
 		{
@@ -67,6 +54,9 @@ int main()
 		}
 
 		pid_t pid = fork();
+		if(pid<0){
+			exit(1);
+		}
 		if (pid == 0) // child
 		{
 			// for ctrl+c
@@ -83,7 +73,7 @@ int main()
 					close(outA);
 					break;
 				}
-				else if (strcmp(argv[j], ">") == 0) // out
+				if (strcmp(argv[j], ">") == 0) // out
 				{
 					argv[j] = NULL;
 					char *text = argv[j + 1];
@@ -94,61 +84,52 @@ int main()
 				}
 				if (strcmp(argv[j], "|") == 0)
 				{
-					printf("1");
-					argv[j] = NULL;
-					printf("2");
-
-					int p[2];
-					int pip = pipe(p); // 0
-					printf("3");
-
-					if (pip != 0)
-					{
-						printf("error in pipe");
+					  int p[2];
+					  if(pipe(p)<0){
 						exit(1);
-					}
-					printf("4");
+					  }
 
-					pid_t pid2 = fork();
-					if (pid2 > 0) // we stiil in the child
-					{
-						printf("5");
+					  pid_t pid2 = fork();
+					  if(pid2<0){
+						exit(1);
+					  }
 
-						close(p[1]);
-						printf("6");
-
-						dup2(p[0], STDOUT_FILENO);
-						printf("7");
-
-						// execvp(argv2[0], argv2); // left side o pipe
-						execvp(argv[j - 1], argv); // left side o pipe
-						printf("8");
-
+					  if(pid2==0){
+						//the left command
 						close(p[0]);
-						printf("9");
-
+						int i=0;
+						char *left[10];
+						while(strcmp(argv[i], "|")){
+							left[i]=argv[i];
+							i++;
+						}
+						left[i]=NULL;
+						int dup1 =dup2(p[1],1);
+						if(dup1<0)
+							exit(1);
+						close(p[1]);
+						execvp(left[0], left);
+					  }else{
+						//the right command
+						int i=0;
+						for (int k = j+1; argv[k] != NULL; k++){
+							argv[i]=argv[k];
+							i++;
+						}
+						argv[i]=NULL;
+						
+						int dup =dup2(p[0],0);
+						if(dup<0)
+							exit(1);
+						close(p[0]);
 						wait(NULL);
-					}
+					  }
 
-					if (pid2 == 0) // grandson
-					{
-						close(p[0]);
-						dup2(p[1], STDIN_FILENO);
-						execvp(argv[j + 1], argv); // rruh side o pipe
-												   // all anain for |
-						close(p[1]);
-					}
 				}
-			}
-
-			execvp(argv[0], argv);
-
-			fprintf(stderr, "Error: %s\n", strerror(errno));
-		}
+				
+			}//for
+			execvp(argv[0],argv);
+		}//if
 		wait(NULL);
-		// if (getppid())
-		// {
-		// 	/* code */
-		// }
-	}
+	}//while
 }
